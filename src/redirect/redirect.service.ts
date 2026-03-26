@@ -6,16 +6,17 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class RedirectService {
     constructor(private prisma: PrismaService) { }
 
-    // Default: faqat bitta redirect guruh/kanal ishlaydi
-    private readonly SINGLE_REDIRECT_MODE = true;
-    private readonly SINGLE_REDIRECT_CHAT_ID = '-1003872057304';
-    private readonly SINGLE_REDIRECT_TITLE = 'Taksichi Bollar';
+    private readonly singleRedirectChatId = process.env.SINGLE_REDIRECT_CHAT_ID?.trim() || '';
+
+    private shouldUseSingleRedirect(): boolean {
+        return !!this.singleRedirectChatId;
+    }
 
     private buildSingleRedirect(): RedirectGroup {
         return {
             id: 0,
-            chatId: this.SINGLE_REDIRECT_CHAT_ID,
-            title: this.SINGLE_REDIRECT_TITLE,
+            chatId: this.singleRedirectChatId,
+            title: this.singleRedirectChatId,
             isActive: true,
             deleteOriginal: false,
             addedById: BigInt(0),
@@ -25,7 +26,7 @@ export class RedirectService {
     }
 
     getActiveGroups() {
-        if (this.SINGLE_REDIRECT_MODE) {
+        if (this.shouldUseSingleRedirect()) {
             return Promise.resolve([this.buildSingleRedirect()]);
         }
 
@@ -39,7 +40,7 @@ export class RedirectService {
         title: string;
         addedById: number;
     }) {
-        if (this.SINGLE_REDIRECT_MODE) {
+        if (this.shouldUseSingleRedirect()) {
             return this.buildSingleRedirect();
         }
 
@@ -55,7 +56,7 @@ export class RedirectService {
     }
 
     async removeGroup(chatId: string) {
-        if (this.SINGLE_REDIRECT_MODE) {
+        if (this.shouldUseSingleRedirect()) {
             return { count: 1 };
         }
 
@@ -71,7 +72,7 @@ export class RedirectService {
 
     // MUHIM: update emas, updateMany
     async setDeleteFlag(chatId: string, value: boolean) {
-        if (this.SINGLE_REDIRECT_MODE) {
+        if (this.shouldUseSingleRedirect()) {
             return { count: 1 };
         }
 

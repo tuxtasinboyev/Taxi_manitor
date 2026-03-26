@@ -9,7 +9,8 @@ import { AdminModule } from 'src/admin/admin.module';
     TelegrafModule.forRoot({
       token: process.env.BOT_TOKEN!,
     }),
-    RedirectModule,AdminModule,RedirectModule
+    RedirectModule,
+    AdminModule,
   ],
   providers: [BotUpdate],
 })
