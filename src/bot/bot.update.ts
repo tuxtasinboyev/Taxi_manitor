@@ -603,6 +603,27 @@ private DRIVER_WORDS: string[] = [
     return m?.[0] || null;
   }
 
+  private extractPhoneFromContact(phoneNumber?: string): string | null {
+    const raw = String(phoneNumber || '').trim();
+    if (!raw) return null;
+
+    const normalized = raw.replace(/[^\d+]/g, '');
+
+    if (/^\+998\d{9}$/.test(normalized)) {
+      return normalized;
+    }
+
+    if (/^998\d{9}$/.test(normalized)) {
+      return `+${normalized}`;
+    }
+
+    if (/^(90|91|93|94|95|97|98|99)\d{7}$/.test(normalized)) {
+      return normalized;
+    }
+
+    return this.extractPhone(normalized);
+  }
+
   private getPrankReply(text: string): string | null {
     const t = (text || '').toLowerCase().replace(/\s+/g, ' ').trim();
 
@@ -784,6 +805,8 @@ ${username}${phone ? `\n📞 ${this.escapeHtml(phone)}` : ''}`;
       ctx.from?.username ||
       'Mijoz';
 
+    await this.safeDeleteSilently(ctx, ctx.chat.id, ctx.message.message_id);
+
     const prompt = await this.sendAutoDeleteMessage(
       ctx,
       ctx.chat.id,
@@ -803,7 +826,11 @@ ${username}${phone ? `\n📞 ${this.escapeHtml(phone)}` : ''}`;
     });
   }
 
-  private async handlePendingPhoneReply(ctx: SafeContext, text: string): Promise<boolean> {
+  private async handlePendingPhoneReply(
+    ctx: SafeContext,
+    text: string,
+    phoneOverride?: string,
+  ): Promise<boolean> {
     const key = this.pendingPhoneKey(ctx.chat.id, ctx.from.id);
     const pending = this.pendingPhoneOrders.get(key);
     if (!pending) return false;
@@ -814,7 +841,7 @@ ${username}${phone ? `\n📞 ${this.escapeHtml(phone)}` : ''}`;
       return true;
     }
 
-    const phone = this.extractPhone(text);
+    const phone = phoneOverride || this.extractPhone(text);
     if (!phone) {
       const prankReply = this.getPrankReply(text);
       if (prankReply) {
@@ -1042,10 +1069,6 @@ ${username}${phone ? `\n📞 ${this.escapeHtml(phone)}` : ''}`;
 
     /* ===== USER ===== */
     const isPrivate = ctx.chat.type === 'private';
-    if (isPrivate) {
-      const isAdmin = await this.adminService.isAdmin(ctx);
-      if (isAdmin) return;
-    }
 
     // redirect joylarda jim (faqat guruh/kanal uchun)
     if (!isPrivate) {
@@ -1070,9 +1093,16 @@ ${username}${phone ? `\n📞 ${this.escapeHtml(phone)}` : ''}`;
     if (phone) {
       await this.forwardAll(ctx, phone);
     } else {
-      await this.forwardOrderWithoutPhone(ctx, { suppressAck: true });
       await this.askPhoneAndStore(ctx, text);
     }
+  }
+
+  @On('contact')
+  async onContact(@Ctx() ctx: SafeContext) {
+    const contactPhone = this.extractPhoneFromContact((ctx.message as any)?.contact?.phone_number);
+    if (!contactPhone) return;
+
+    await this.handlePendingPhoneReply(ctx, '', contactPhone);
   }
 
   // ================= FORWARD =================

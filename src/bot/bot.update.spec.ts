@@ -78,4 +78,130 @@ describe('BotUpdate isTaxiOrder', () => {
     expect(withoutPhoneSpy).not.toHaveBeenCalled();
     expect(askPhoneSpy).not.toHaveBeenCalled();
   });
+
+  it('allows admin users to submit orders in private chat', async () => {
+    const redirectService = { getActiveGroups: jest.fn().mockResolvedValue([]) };
+    const adminService = { isAdmin: jest.fn().mockResolvedValue(true) };
+    const localBot = new BotUpdate(redirectService as any, adminService as any);
+
+    const ctx = {
+      chat: { id: 1001, type: 'private' as const },
+      from: { id: 9001, first_name: 'Admin' },
+      message: {
+        text: 'Gulistondan kamsamolga taxi bormi 901234567',
+        message_id: 77,
+      },
+      telegram: {},
+      reply: jest.fn(),
+    } as any;
+
+    jest.spyOn(localBot as any, 'handlePendingPhoneReply').mockResolvedValue(false);
+
+    const forwardSpy = jest.spyOn(localBot as any, 'forwardAll').mockResolvedValue(undefined);
+
+    await localBot.onText(ctx);
+
+    expect(forwardSpy).toHaveBeenCalledWith(ctx, '901234567');
+  });
+
+  it('asks for phone before forwarding orders without a phone number', async () => {
+    const redirectService = { getActiveGroups: jest.fn().mockResolvedValue([]) };
+    const adminService = { isAdmin: jest.fn().mockResolvedValue(false) };
+    const localBot = new BotUpdate(redirectService as any, adminService as any);
+
+    const ctx = {
+      chat: { id: 1001, type: 'private' as const },
+      from: { id: 9001, first_name: 'User' },
+      message: { text: 'Gulistondan kamsamolga taxi bormi', message_id: 77 },
+      telegram: {},
+      reply: jest.fn(),
+    } as any;
+
+    jest.spyOn(localBot as any, 'handlePendingPhoneReply').mockResolvedValue(false);
+
+    const forwardSpy = jest.spyOn(localBot as any, 'forwardAll').mockResolvedValue(undefined);
+    const withoutPhoneSpy = jest
+      .spyOn(localBot as any, 'forwardOrderWithoutPhone')
+      .mockResolvedValue(undefined);
+    const askPhoneSpy = jest.spyOn(localBot as any, 'askPhoneAndStore').mockResolvedValue(undefined);
+
+    await localBot.onText(ctx);
+
+    expect(forwardSpy).not.toHaveBeenCalled();
+    expect(withoutPhoneSpy).not.toHaveBeenCalled();
+    expect(askPhoneSpy).toHaveBeenCalledWith(ctx, ctx.message.text);
+  });
+
+  it('deletes the original order before asking for a phone number', async () => {
+    const localBot = new BotUpdate({} as any, {} as any);
+    const ctx = {
+      chat: { id: 1001, type: 'private' as const },
+      from: { id: 9001, first_name: 'User', last_name: 'Test' },
+      message: { text: 'Gulistondan kamsamolga taxi bormi', message_id: 77 },
+      telegram: {},
+    } as any;
+
+    const deleteSpy = jest.spyOn(localBot as any, 'safeDeleteSilently').mockResolvedValue(undefined);
+    const promptSpy = jest
+      .spyOn(localBot as any, 'sendAutoDeleteMessage')
+      .mockResolvedValue({ message_id: 88 });
+
+    await (localBot as any).askPhoneAndStore(ctx, ctx.message.text);
+
+    expect(deleteSpy).toHaveBeenCalledWith(ctx, ctx.chat.id, ctx.message.message_id);
+    expect(promptSpy).toHaveBeenCalledWith(
+      ctx,
+      ctx.chat.id,
+      expect.stringContaining('nomerizni yuboring'),
+      { parse_mode: 'HTML' },
+    );
+    expect((localBot as any).pendingPhoneOrders.get('1001:9001')).toEqual(
+      expect.objectContaining({
+        chatId: 1001,
+        userId: 9001,
+        text: ctx.message.text,
+        sourceMessageId: 77,
+        promptMessageId: 88,
+      }),
+    );
+  });
+
+  it('accepts a shared contact as the pending phone reply', async () => {
+    const localBot = new BotUpdate({} as any, {} as any);
+    (localBot as any).pendingPhoneOrders.set('1001:9001', {
+      chatId: 1001,
+      userId: 9001,
+      fullName: 'User Test',
+      text: 'Gulistondan kamsamolga taxi bormi',
+      sourceMessageId: 77,
+      promptMessageId: 88,
+    });
+
+    const ctx = {
+      chat: { id: 1001, type: 'private' as const },
+      from: { id: 9001, first_name: 'User' },
+      message: {
+        message_id: 79,
+        contact: { phone_number: '998901234567' },
+      },
+      telegram: {},
+    } as any;
+
+    const forwardSpy = jest.spyOn(localBot as any, 'forwardAll').mockResolvedValue(undefined);
+
+    await localBot.onContact(ctx);
+
+    expect(forwardSpy).toHaveBeenCalledWith(
+      ctx,
+      '+998901234567',
+      expect.objectContaining({
+        chatId: 1001,
+        text: 'Gulistondan kamsamolga taxi bormi',
+        sourceMessageId: 77,
+        phoneMessageId: 79,
+        promptMessageId: 88,
+      }),
+    );
+    expect((localBot as any).pendingPhoneOrders.has('1001:9001')).toBe(false);
+  });
 });
