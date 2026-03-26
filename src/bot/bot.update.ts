@@ -550,15 +550,91 @@ private DRIVER_WORDS: string[] = [
     ['лелндан', 'камсамулга', 'почта бор']
   ];
 
+  private transliterateUzbekCyrillic(text: string): string {
+    return text
+      .replace(/ў/g, 'o')
+      .replace(/қ/g, 'q')
+      .replace(/ғ/g, 'g')
+      .replace(/ҳ/g, 'h')
+      .replace(/ё/g, 'yo')
+      .replace(/ю/g, 'yu')
+      .replace(/я/g, 'ya')
+      .replace(/ч/g, 'ch')
+      .replace(/ш/g, 'sh')
+      .replace(/ж/g, 'j')
+      .replace(/ц/g, 's')
+      .replace(/й/g, 'y')
+      .replace(/а/g, 'a')
+      .replace(/б/g, 'b')
+      .replace(/в/g, 'v')
+      .replace(/г/g, 'g')
+      .replace(/д/g, 'd')
+      .replace(/е/g, 'e')
+      .replace(/з/g, 'z')
+      .replace(/и/g, 'i')
+      .replace(/к/g, 'k')
+      .replace(/л/g, 'l')
+      .replace(/м/g, 'm')
+      .replace(/н/g, 'n')
+      .replace(/о/g, 'o')
+      .replace(/п/g, 'p')
+      .replace(/р/g, 'r')
+      .replace(/с/g, 's')
+      .replace(/т/g, 't')
+      .replace(/у/g, 'u')
+      .replace(/ф/g, 'f')
+      .replace(/х/g, 'x')
+      .replace(/ъ/g, '')
+      .replace(/ь/g, '');
+  }
+
   private normalizeOrderText(text: string): string {
     return (text || '')
       .toLowerCase()
+      .replace(/ғ/g, 'gʻ')
+      .replace(/ў/g, 'oʻ')
+      .replace(/қ/g, 'q')
+      .replace(/ҳ/g, 'h')
+      .replace(/ё/g, 'yo')
+      .replace(/ю/g, 'yu')
+      .replace(/я/g, 'ya')
+      .replace(/ч/g, 'ch')
+      .replace(/ш/g, 'sh')
+      .replace(/ж/g, 'j')
+      .replace(/ц/g, 's')
+      .replace(/й/g, 'y')
+      .replace(/[абвгдезиклмнопрстуфх]/g, ch => this.transliterateUzbekCyrillic(ch))
       .replace(/[ʻʼ’‘`']/g, '')
       .replace(/(\p{N})(\p{L})/gu, '$1 $2')
       .replace(/(\p{L})(\p{N})/gu, '$1 $2')
       .replace(/[.,!?;:()[\]{}"]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  private hasPassengerCount(text: string): boolean {
+    return /\b(\d+|bir|ikki|uch|tort|to'rt|besh|olti|yetti|sakkiz|toqqiz|on)\s*(ta\s*)?(kishi|odam|yo'lovchi|yolovchi|kiwi|kshi)\b/u.test(
+      text,
+    );
+  }
+
+  private hasRoutePattern(text: string): boolean {
+    const tokens = text.split(' ').filter(Boolean);
+    let directionalCount = 0;
+
+    for (const token of tokens) {
+      if (
+        token.length > 4 &&
+        (token.endsWith('dan') ||
+          token.endsWith('ga') ||
+          token.endsWith('gacha') ||
+          token.endsWith('tomonga'))
+      ) {
+        directionalCount++;
+      }
+    }
+
+    return directionalCount >= 2;
   }
 
   private escapeRegex(value: string): string {
@@ -594,6 +670,8 @@ private DRIVER_WORDS: string[] = [
     for (const pattern of this.CLIENT_WORDS_COMBO) {
       if (pattern.every(p => this.hasPhrase(t, p))) return true;
     }
+
+    if (this.hasPassengerCount(t) && this.hasRoutePattern(t)) return true;
 
     return false;
   }

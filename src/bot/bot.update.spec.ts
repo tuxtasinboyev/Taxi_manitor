@@ -22,6 +22,7 @@ describe('BotUpdate isTaxiOrder', () => {
       'Гулистондан камсамолга 1киши бор',
       'тошкендан камсамолга такси борми',
       'Гулистонга Бир киши',
+      'Тошкетндан гулистонга 1 киши',
       'Gulistondan kamsamolga taxi bormi srochna zakazga 40 ming beraman',
       'Kamsamo‘ldan gulistonga 2kishimiz',
       'Waxarga dastavka bor',
