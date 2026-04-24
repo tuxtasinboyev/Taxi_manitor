@@ -497,37 +497,161 @@ export class BotUpdate {
     'toshkentdan kamsamolga taksi bormi',
     'gulistondan kamsamolga taxi bormi',
   ];
+  private readonly NON_ORDER_PHRASES: string[] = [
+    'hammasini qoshing',
+    'nomr tawela',
+    'nomr tashela',
+    'nomr tashlang',
+    'nomer tashlang',
+    'nomer bering',
+    'kancha bulyapdi',
+    'kancha bolyapdi',
+    'necha pul',
+    'bor ekan',
+  ];
+  private readonly NON_LOCATION_TOKENS = new Set([
+    'bugun',
+    'bugunga',
+    'ertaga',
+    'ertalab',
+    'ertalabga',
+    'hozir',
+    'hozirga',
+    'xozir',
+    'xozirga',
+    'kechqurun',
+    'kechqurunga',
+    'soat',
+    'lar',
+    'larda',
+    'minut',
+    'sekund',
+    'srochna',
+    'srochni',
+  ]);
+  private readonly LOCATION_STEMS: string[] = [
+    'kamsamol',
+    'kamsomol',
+    'guliston',
+    'toshkent',
+    'toshken',
+    'shahar',
+    'shaxar',
+    'oktyabr',
+    'yulduz',
+    'jilgaradok',
+    'samarqand',
+    'fargona',
+    'sergili',
+    'baxt',
+    'keles',
+    'lelin',
+    'lenin',
+    'ped',
+    'instut',
+    'institut',
+    'universitet',
+    'mavze',
+    'mikrayon',
+    'mikrorayon',
+    'vokzal',
+    'saxovat',
+  ];
+  private readonly ROUTE_HINT_PHRASES: string[] = [
+    'ketayotgan taksi kerak',
+    'kelayotgan taksi kerak',
+    'ketadigan moshin bormi',
+    'ketadigan mashina bormi',
+    'ketadigan taksi bormi',
+    'taksi kk',
+    'taxi kk',
+    'mashina kk',
+    'moshina kk',
+    'taksi kerak',
+    'taxi kerak',
+    'taki kerk',
+    'taki kerak',
+    'taksi bormi',
+    'taxi bormi',
+    'mashina kerak',
+    'moshina kerak',
+    'mashina bormi',
+    'moshina bormi',
+    'bosh moshin kerak',
+    'bosh moshina kerak',
+    'bosh mashina kerak',
+    'bosh taksi kerak',
+    'bosh moshin kk',
+    'bosh moshina kk',
+    'bosh taksi kk',
+    'bosh moshin kerak zakaz',
+    'bosh moshina kerak zakaz',
+  ];
+  private readonly SOFT_CLIENT_PHRASES: string[] = [
+    'kerak',
+    'kere',
+    'kk',
+    'zakaz',
+    'zakaz bor',
+    'odam bor',
+    'kishi bor',
+    'kish bor',
+    'pochta bor',
+    'srochni',
+    'bormi',
+    'boraman',
+    'boramiz',
+    'taksi bormi',
+    'taxi bormi',
+    'mashina bormi',
+    'moshina bormi',
+    'srochna',
+    'dastavka bor',
+    'dostavka bor',
+    'bir kishi',
+    'bir odam',
+    '1 kishi',
+    '1kishi',
+    '1ta odam',
+    '2kishi',
+    'kishimiz',
+    'kshi bor',
+    'kishi bor',
+    'kish bor',
+    'kiwi bor',
+    'yolkira',
+    'hozirga',
+    'xozirga',
+    'такси керак',
+    'такси кере',
+    'такси борми',
+    'керак',
+    'кк',
+    'заказ',
+    'заказ бор',
+    'одам бор',
+    'киши бор',
+    'киш бор',
+    'почта bor',
+    'срочни',
+    'срочна',
+    'хозирга',
+    'гулистонга бир киши',
+    'гулистонга 1 кши',
+    'шахарга бир киши',
+  ];
 
   // ================= FILTER =================
-private DRIVER_WORDS: string[] = [
-  // Mavjud so'zlar...
-  'olamiz', 'odam olamiz', 'pochta olamiz', 'yolovchi olamiz',
-  'taksi bor', 'taxi bor', 'mashina bor', 'mashina bormi',
-  'bosh mashina bor', 'bosh taksi bor', 'kim ketadi', 'kim boradi',
-  'оламиз', 'одам оламиз', 'почта оламиз', 'йўловчи оламиз',
-  'такси бор', 'машина бор', 'машина борми', 'бош машина бор',
-  'бош такси бор', 'ким кетади', 'ким боради',
-
-  // Yangi qo'shilgan variantlar (Xabarlardan olingan)
-  'obketaman', 'olib ketaman', 'obketamiz',
-  'bosh moshin', 'mowina bor', 'tel +',
-  'обкетаман', 'олиб кетаман', 'бош мошин',
-  'мошина бор'
-];
-
-  private CLIENT_WORDS_SINGLE: string[] = [
-    'taksi kerak', 'taxi kerak', 'taksi kere', 'taxi kere',
-    'kerak', 'kere', 'kk', 'zakaz', 'zakaz bor',
-    'odam bor', 'kishi bor', 'pochta bor', 'srochni',
-    'bormi', 'boraman', 'boramiz',
-    'taksi bormi', 'taxi bormi', 'mashina bormi', 'moshina bormi',
-    'srochna', 'dastavka bor', 'dostavka bor',
-    'bir kishi', 'bir odam', '1 kishi', '1kishi', '2kishi', 'kishimiz',
-    'kshi bor', 'kiwi bor', 'yolkira',
-    'hozirga', 'xozirga',
-    'такси керак', 'такси кере', 'такси борми', 'керак', 'кк', 'заказ', 'заказ бор',
-    'одам бор', 'киши бор', 'почта bor', 'срочни', 'срочна', 'хозирга',
-    'гулистонга бир киши', 'гулистонга 1 кши', 'шахарга бир киши'
+  private DRIVER_WORDS: string[] = [
+    'olamiz', 'odam olamiz', 'pochta olamiz', 'yolovchi olamiz',
+    'taksi bor', 'taxi bor', 'mashina bor', 'moshina bor',
+    'bosh mashina bor', 'bosh moshina bor', 'bosh moshin bor', 'bosh taksi bor',
+    'kim ketadi', 'kim boradi',
+    'оламиз', 'одам оламиз', 'почта оламиз', 'йўловчи оламиз',
+    'такси бор', 'машина бор', 'машина борми', 'бош машина бор',
+    'бош такси бор', 'ким кетади', 'ким боради',
+    'obketaman', 'olib ketaman', 'obketamiz', 'olib ketamiz',
+    'обкетаман', 'олиб кетаман', 'бош мошин', 'мошина бор',
   ];
 
   private CLIENT_WORDS_COMBO: string[][] = [
@@ -560,9 +684,12 @@ private DRIVER_WORDS: string[] = [
       .replace(/ю/g, 'yu')
       .replace(/я/g, 'ya')
       .replace(/ч/g, 'ch')
+      .replace(/щ/g, 'sh')
       .replace(/ш/g, 'sh')
       .replace(/ж/g, 'j')
       .replace(/ц/g, 's')
+      .replace(/э/g, 'e')
+      .replace(/ы/g, 'i')
       .replace(/й/g, 'y')
       .replace(/а/g, 'a')
       .replace(/б/g, 'b')
@@ -590,6 +717,8 @@ private DRIVER_WORDS: string[] = [
 
   private normalizeOrderText(text: string): string {
     return (text || '')
+      .replace(/\u00a0/g, ' ')
+      .replace(/\r/g, '\n')
       .toLowerCase()
       .replace(/ғ/g, 'gʻ')
       .replace(/ў/g, 'oʻ')
@@ -599,11 +728,15 @@ private DRIVER_WORDS: string[] = [
       .replace(/ю/g, 'yu')
       .replace(/я/g, 'ya')
       .replace(/ч/g, 'ch')
+      .replace(/щ/g, 'sh')
       .replace(/ш/g, 'sh')
       .replace(/ж/g, 'j')
       .replace(/ц/g, 's')
+      .replace(/э/g, 'e')
+      .replace(/ы/g, 'i')
       .replace(/й/g, 'y')
       .replace(/[абвгдезиклмнопрстуфх]/g, ch => this.transliterateUzbekCyrillic(ch))
+      .replace(/(?:^|\n)\s*[^:\n]{1,40}:\s*(?=\n|\s)/g, ' ')
       .replace(/[ʻʼ’‘`']/g, '')
       .replace(/(\p{N})(\p{L})/gu, '$1 $2')
       .replace(/(\p{L})(\p{N})/gu, '$1 $2')
@@ -613,28 +746,52 @@ private DRIVER_WORDS: string[] = [
   }
 
   private hasPassengerCount(text: string): boolean {
-    return /\b(\d+|bir|ikki|uch|tort|to'rt|besh|olti|yetti|sakkiz|toqqiz|on)\s*(ta\s*)?(kishi|odam|yo'lovchi|yolovchi|kiwi|kshi)\b/u.test(
+    return /\b(\d+|bir|bitta|ikki|uch|tort|to'rt|besh|olti|yetti|sakkiz|toqqiz|on)\s*(ta\s*)?(kishi|kishi|kish|odam|yo'lovchi|yolovchi|kiwi|kshi)\b/u.test(
       text,
     );
   }
 
-  private hasRoutePattern(text: string): boolean {
+  private isLocationLikeToken(token: string): boolean {
+    if (!token) return false;
+
+    const clean = token.replace(/[^a-z0-9]/g, '');
+    if (!clean || this.NON_LOCATION_TOKENS.has(clean)) return false;
+
+    if (this.LOCATION_STEMS.some(stem => clean.includes(stem))) {
+      return true;
+    }
+
+    if (clean.length <= 5) return false;
+
+    return (
+      clean.endsWith('dan') ||
+      clean.endsWith('ga') ||
+      clean.endsWith('gacha') ||
+      clean.endsWith('tomonga') ||
+      clean.endsWith('da') ||
+      clean.endsWith('de')
+    );
+  }
+
+  private countLocationTokens(text: string): number {
     const tokens = text.split(' ').filter(Boolean);
-    let directionalCount = 0;
+    const unique = new Set<string>();
 
     for (const token of tokens) {
-      if (
-        token.length > 4 &&
-        (token.endsWith('dan') ||
-          token.endsWith('ga') ||
-          token.endsWith('gacha') ||
-          token.endsWith('tomonga'))
-      ) {
-        directionalCount++;
+      if (this.isLocationLikeToken(token)) {
+        unique.add(token);
       }
     }
 
-    return directionalCount >= 2;
+    return unique.size;
+  }
+
+  private hasLocationSignal(text: string): boolean {
+    return this.countLocationTokens(text) >= 1;
+  }
+
+  private hasRoutePattern(text: string): boolean {
+    return this.countLocationTokens(text) >= 2;
   }
 
   private escapeRegex(value: string): string {
@@ -660,18 +817,38 @@ private DRIVER_WORDS: string[] = [
     const t = this.normalizeOrderText(text);
     if (!t) return false;
 
-    // Avval haydovchi iboralari: client bo'lmaganini aniq to'xtatamiz
-    if (this.hasAnyPhrase(t, this.DRIVER_WORDS)) return false;
+    if (this.hasAnyPhrase(t, this.NON_ORDER_PHRASES)) return false;
+
+    const hasLocationSignal = this.hasLocationSignal(t);
+    const hasPassengerCount = this.hasPassengerCount(t);
+    const hasRoutePattern = this.hasRoutePattern(t);
+
+    if (
+      this.hasAnyPhrase(t, this.DRIVER_WORDS) &&
+      !this.hasAnyPhrase(t, this.ROUTE_HINT_PHRASES) &&
+      !(hasPassengerCount && hasLocationSignal)
+    ) {
+      return false;
+    }
 
     if (this.hasAnyPhrase(t, this.FORCE_CLIENT_PHRASES)) return true;
 
-    if (this.hasAnyPhrase(t, this.CLIENT_WORDS_SINGLE)) return true;
+    if (this.hasAnyPhrase(t, this.ROUTE_HINT_PHRASES) && (hasLocationSignal || hasPassengerCount)) {
+      return true;
+    }
 
     for (const pattern of this.CLIENT_WORDS_COMBO) {
       if (pattern.every(p => this.hasPhrase(t, p))) return true;
     }
 
-    if (this.hasPassengerCount(t) && this.hasRoutePattern(t)) return true;
+    if (
+      this.hasAnyPhrase(t, this.SOFT_CLIENT_PHRASES) &&
+      (hasLocationSignal || hasPassengerCount || hasRoutePattern)
+    ) {
+      return true;
+    }
+
+    if (hasPassengerCount && hasLocationSignal) return true;
 
     return false;
   }
